@@ -11,18 +11,82 @@ const users = [];
 
 function checksExistsUserAccount(request, response, next) {
   // Complete aqui
+  if (!request.headers) {
+    return response.status(404).json({ message: "ano tem header" });
+  }
+
+  const { username } = request.headers;
+  const userExists = users.find((user) => user.username === username);
+
+  if (userExists) {
+    request.user = userExists;
+    next();
+  } else {
+    return response.status(404).json({ message: "usuario nao existe" });
+  }
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
   // Complete aqui
+  const user = request.user;
+
+  if (user.pro) {
+    next()
+  } else if (user.todos.length >= 10) {
+    return response.status(403).json({ error: 'User already has 10 todos' });
+  } else {
+    next();
+  }
 }
 
 function checksTodoExists(request, response, next) {
   // Complete aqui
+  if (!request.headers) {
+    return response.status(404).json({ message: "error" });
+  }
+  const { username } = request.headers;
+  const id = request.params.id;
+  const idIsValid = validate(id);
+  if (!idIsValid) {
+    response.status(400).json({ message: "ID invalid" });
+    return
+  }
+  const userExists = users.find((user) => user.username === username);
+  if (userExists) {
+    const todo = userExists.todos.find((todo) => todo.id === id);
+    console.log("todo: ", todo);
+
+    if (todo) {
+      request.user = userExists;
+      request.todo = todo;
+      next();
+    } else {
+      console.log("todo nao encontrado");
+      response.status(404).json({ error: "error" });
+      return
+    }
+  } else {
+    console.log("usuario nao existe");
+    response.status(404).json({ message: "usuario nao existe" });
+    return
+  }
 }
 
 function findUserById(request, response, next) {
   // Complete aqui
+
+  const id = request.params.id;
+  const userExists = users.find((user) => user.id === id);
+
+  if (userExists) {
+    request.user = userExists;
+    next();
+  } else {
+    console.log("usuario nao existe");
+    response.status(404).json({});
+    return
+  }
+
 }
 
 app.post('/users', (request, response) => {
